@@ -1,4 +1,3 @@
-// server/middleware/auth.ts
 import type { Next, State, RouterContext } from "@oak/oak";
 
 import { verifyJWT } from "../lib/jwt.ts";
@@ -9,11 +8,7 @@ export interface AuthState extends State {
   user?: AuthPayload;
 }
 
-/**
- * Contexte compatible Router (=> ctx.params existe)
- * - P = Record<string, string> : params dynamiques
- * - S = AuthState : on injecte ctx.state.user
- */
+
 export type AuthContext = RouterContext<string, Record<string, string>, AuthState>;
 
 export async function authMiddleware(ctx: AuthContext, next: Next) {

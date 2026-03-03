@@ -70,7 +70,6 @@ export async function loginUser(username: string, password: string): Promise<Aut
   return { token, user };
 }
 
-// Exemple de "me": infos user + stats simples
 export function getMe(userId: string) {
   const userRow = findUserById(userId);
   if (!userRow) {

@@ -44,13 +44,10 @@ function assertCanEdit(ctx: AuthContext, pollId: string) {
     throw new APIException(APIErrorCode.UNAUTHORIZED, 401, "Missing auth");
   }
 
-  // admin => OK
   if (user.isAdmin) return;
 
-  // owner => OK
   if (row.user_id && row.user_id === user.userId) return;
 
-  // sinon => forbidden
   throw new APIException(APIErrorCode.UNAUTHORIZED, 403, "Forbidden");
 }
 
@@ -203,7 +200,6 @@ router.get("/:pollId", (ctx) => {
 });
 
 // ---------- POST /polls (create) ----------
-// -> connecté obligatoire
 router.post("/", authMiddleware, async (ctx: AuthContext) => {
   const body = await ctx.request.body.json();
   const createReq = validateCreateBody(body);
@@ -344,7 +340,6 @@ router.put("/:pollId", authMiddleware, async (ctx: AuthContext) => {
 });
 
 // ---------- DELETE /polls/:pollId ----------
-// -> owner ou admin
 router.delete("/:pollId", authMiddleware, (ctx: AuthContext) => {
   const pollId = ctx.params.pollId;
   assertCanEdit(ctx, pollId);

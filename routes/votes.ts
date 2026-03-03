@@ -18,10 +18,17 @@ router.get("/:pollId", async (ctx) => {
     throw new APIException(APIErrorCode.BAD_REQUEST, 400, "WebSocket required");
   }
 
-  // ✅ token passé en query param: ws://.../votes/:pollId?token=...
   const token = ctx.request.url.searchParams.get("token");
-  const payload = token ? await verifyJWT(token) : null;
-  const userId = payload?.userId; // undefined si non connecté / token invalide
+
+  let userId: string | undefined;
+  if (token) {
+    try {
+      const payload = await verifyJWT(token);
+      userId = payload?.userId;
+    } catch {
+      userId = undefined;
+    }
+  }
 
   const ws: WebSocket = ctx.upgrade();
 
@@ -33,28 +40,31 @@ router.get("/:pollId", async (ctx) => {
     try {
       msg = JSON.parse(String(e.data));
     } catch {
-      ws.send(JSON.stringify({
-        type: "vote_ack",
-        pollId,
-        optionId: "",
-        success: false,
-        error: { code: APIErrorCode.BAD_REQUEST, message: "Invalid JSON" },
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "vote_ack",
+          pollId,
+          optionId: "",
+          success: false,
+          error: { code: APIErrorCode.BAD_REQUEST, message: "Invalid JSON" },
+        }),
+      );
       return;
     }
 
     if (!isVoteCastMessage(msg)) {
-      ws.send(JSON.stringify({
-        type: "vote_ack",
-        pollId,
-        optionId: "",
-        success: false,
-        error: { code: APIErrorCode.BAD_REQUEST, message: "Invalid message" },
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "vote_ack",
+          pollId,
+          optionId: "",
+          success: false,
+          error: { code: APIErrorCode.BAD_REQUEST, message: "Invalid message" },
+        }),
+      );
       return;
     }
 
-    // ✅ IMPORTANT: on force pollId du canal, et on passe l'identité depuis le token
     handleVoteMessage(ws, { ...msg, pollId }, userId);
   };
 

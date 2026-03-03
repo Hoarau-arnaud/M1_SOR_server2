@@ -8,7 +8,6 @@ import { getMe, loginUser, registerUser } from "../services/users.ts";
 
 const router = new Router({ prefix: "/users" });
 
-// POST /users/register
 router.post("/register", async (ctx) => {
   const body: unknown = await ctx.request.body.json();
 
@@ -22,7 +21,6 @@ router.post("/register", async (ctx) => {
   ctx.response.body = resp;
 });
 
-// POST /users/login
 router.post("/login", async (ctx) => {
   const body: unknown = await ctx.request.body.json();
 
@@ -36,7 +34,6 @@ router.post("/login", async (ctx) => {
   ctx.response.body = resp;
 });
 
-// GET /users/me (protégé)
 router.get("/me", authMiddleware, (ctx: AuthContext) => {
   const userId = ctx.state.user?.userId;
   if (!userId) {

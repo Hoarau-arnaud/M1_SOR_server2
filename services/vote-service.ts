@@ -17,9 +17,8 @@ function castVote(
   voteId: string,
   pollId: string,
   optionId: string,
-  authedUserId?: string, // ✅ identité issue du token WS
+  authedUserId?: string,
 ): { voteCount: number; didIncrement: boolean } {
-  // ✅ Lire aussi restricted_to_auth (+ is_active si tu veux bloquer les polls inactifs)
   const poll = db.prepare(
     `SELECT id, is_active, restricted_to_auth
      FROM polls
@@ -28,17 +27,14 @@ function castVote(
 
   if (!poll) throw new APIException(APIErrorCode.NOT_FOUND, 404, "Poll not found");
 
-  // Optionnel (mais logique) : pas de vote si poll inactif
   if (poll.is_active !== 1) {
     throw new APIException(APIErrorCode.VALIDATION_ERROR, 400, "Poll is inactive");
   }
 
-  // ✅ Règle: si poll restreint => JWT obligatoire
   if (poll.restricted_to_auth === 1 && !authedUserId) {
     throw new APIException(APIErrorCode.UNAUTHORIZED, 401, "Login required to vote");
   }
 
-  // Vérifier que l’option appartient au poll
   const opt = db.prepare(
     `SELECT id FROM poll_options WHERE id = ? AND poll_id = ?;`,
   ).get(optionId, pollId);
@@ -64,7 +60,6 @@ function castVote(
   } catch (e) {
     db.exec("ROLLBACK;");
 
-    // voteId déjà vu => idempotent
     if (!isLikelyUniqueConstraintError(e)) throw e;
 
     const rowDup = db.prepare(
@@ -133,7 +128,6 @@ export function sendError(
   }
 }
 
-// ✅ userId passé séparément, et on ignore tout userId éventuel dans msg
 export function handleVoteMessage(ws: WebSocket, msg: VoteCastMessage, authedUserId?: string): void {
   try {
     const { voteCount, didIncrement } = castVote(
